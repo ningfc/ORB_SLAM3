@@ -1,0 +1,113 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+
+Camera.type: "KannalaBrandt8"
+
+# Left Camera calibration and distortion parameters (OpenCV)
+Camera.fx: 236.88626333372983
+Camera.fy: 236.87998104384025
+Camera.cx: 373.00640738652476
+Camera.cy: 243.84219854554817
+
+# Kannala-Brandt distortion parameters
+Camera.k1: 0.09108912327345338
+Camera.k2: 0.032148451325764424
+Camera.k3: -0.010087795015103661
+Camera.k4: -0.005936114203736348
+
+# Right Camera calibration and distortion parameters (OpenCV)
+Camera2.fx: 236.66017717121653
+Camera2.fy: 236.82890192542226
+Camera2.cx: 392.61328512075477
+Camera2.cy: 261.968241504479
+
+# Kannala-Brandt distortion parameters
+Camera2.k1: 0.09030043243921607
+Camera2.k2: 0.04076769701239063
+Camera2.k3: -0.020921247565264645
+Camera2.k4: -0.0009854467417808525
+    
+# Transformation matrix from right camera to left camera
+Tlr: !!opencv-matrix
+  rows: 3
+  cols: 4
+  dt: f
+  data: [ 0.999862, -0.00288864, -0.0163591, 0.149566,
+          0.00291238, 0.999995, 0.00142799, 0.00216028,
+          0.0163549, -0.00147544, 0.999865, 0.0027757]
+
+# Lapping area between images  HAN
+Camera.lappingBegin: 0  
+Camera.lappingEnd: 751
+
+Camera2.lappingBegin: 0
+Camera2.lappingEnd: 751
+
+# Camera resolution
+Camera.width: 752
+Camera.height: 480
+
+# Camera frames per second 
+Camera.fps: 26.0
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.   HAN
+ThDepth: 40.0
+# Camera.bf: 35.43983267
+Camera.bf: 35.40600861
+
+# Transformation from body-frame (imu) to left camera
+Tbc: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [-0.99991441,  0.00110778, -0.01303633, 0.13891597,
+        -0.00119761, -0.99997558,  0.00688459, 0.00152216,
+        -0.01302839,  0.00689961,  0.99989132, 0.00970822,
+           0, 0, 0, 1.]
+
+# IMU noise (Use those from VINS-mono)   HAN
+IMU.NoiseGyro: 0.03 # 0.004 (VINS) # 0.00016 (TUM) # 0.00016    # rad/s^0.5 
+IMU.NoiseAcc: 0.3  # 0.04 (VINS) # 0.0028 (TUM) # 0.0028     # m/s^1.5
+IMU.GyroWalk: 0.000022 # 0.000022 (VINS and TUM) rad/s^1.5
+IMU.AccWalk: 0.0004 # 0.0004 (VINS) # 0.00086 # 0.00086    # m/s^2.5
+IMU.Frequency: 200
+#thFarPoints: 20.0
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image   HAN
+ORBextractor.nFeatures: 1500 # Tested with 1250
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast	  HAN		
+ORBextractor.iniThFAST: 12 # 20
+ORBextractor.minThFAST: 5 # 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -3.5
+Viewer.ViewpointF: 500

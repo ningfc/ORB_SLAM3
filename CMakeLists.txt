@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 project(ORB_SLAM3)
 
 IF(NOT CMAKE_BUILD_TYPE)
@@ -38,9 +38,16 @@ find_package(OpenCV 4.4)
 MESSAGE("OPENCV VERSION:")
 MESSAGE(${OpenCV_VERSION})
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
 find_package(realsense2)
+find_package(rclcpp QUIET)
+find_package(sensor_msgs QUIET)
+find_package(cv_bridge QUIET)
+find_package(message_filters QUIET)
 
 include_directories(
 ${PROJECT_SOURCE_DIR}
@@ -256,6 +263,44 @@ if(realsense2_FOUND)
             Examples/Stereo-Inertial/stereo_inertial_realsense_D435i.cc)
     target_link_libraries(stereo_inertial_realsense_D435i ${PROJECT_NAME})
 endif()
+
+set(CYPERSTEREO_SDK_DIR ${PROJECT_SOURCE_DIR}/../CyperstereoSDK)
+if(EXISTS "${CYPERSTEREO_SDK_DIR}/src/usb/uvc/cyperstereo_api.h")
+        if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+                add_library(Cyperlib STATIC
+                        ${CYPERSTEREO_SDK_DIR}/src/usb/uvc/uvc.h
+                        ${CYPERSTEREO_SDK_DIR}/src/usb/uvc/types.h
+                        ${CYPERSTEREO_SDK_DIR}/src/usb/uvc/linux/uvc-v4l2.cc)
+
+                add_executable(stereo_inertial_cyperstereo
+                                Examples/Stereo-Inertial/stereo_inertial_cyperstereo.cc)
+                target_include_directories(stereo_inertial_cyperstereo PRIVATE
+                        ${CYPERSTEREO_SDK_DIR}/src/usb/uvc)
+                target_link_libraries(stereo_inertial_cyperstereo ${PROJECT_NAME} Cyperlib pthread)
+
+                add_executable(usb_camera_rt
+                                Examples/Stereo-Inertial/usb_camera_rt.cpp)
+                target_include_directories(usb_camera_rt PRIVATE
+                        ${CYPERSTEREO_SDK_DIR}/src/usb/uvc)
+                target_link_libraries(usb_camera_rt ${PROJECT_NAME} Cyperlib pthread ${OpenCV_LIBS})
+        endif()
+endif()
+
+if(rclcpp_FOUND AND sensor_msgs_FOUND AND cv_bridge_FOUND AND message_filters_FOUND)
+    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/ROS2)
+    add_executable(stereo_inertial_ros2
+            Examples/ROS2/stereo_inertial_ros2.cc)
+    target_link_libraries(stereo_inertial_ros2
+            ${PROJECT_NAME}
+            rclcpp::rclcpp
+            message_filters::message_filters
+            cv_bridge::cv_bridge)
+endif()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/build)
+add_executable(usb_camera
+Examples/Stereo-Inertial/usb_camera.cpp)
+target_link_libraries(usb_camera ${PROJECT_NAME})
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Calibration)
 if(realsense2_FOUND)

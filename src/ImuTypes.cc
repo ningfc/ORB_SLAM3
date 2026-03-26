@@ -22,6 +22,7 @@
 #include "GeometricTools.h"
 
 #include<iostream>
+#include<cmath>
 
 namespace ORB_SLAM3
 {
@@ -176,6 +177,19 @@ void Preintegrated::Reintegrate()
 
 void Preintegrated::IntegrateNewMeasurement(const Eigen::Vector3f &acceleration, const Eigen::Vector3f &angVel, const float &dt)
 {
+    if(!(std::isfinite(dt) && dt > 0.0f))
+    {
+        std::cout << "[IMU::Preintegrated] Invalid dt (<=0 or non-finite). Skipping measurement. dt=" << dt << std::endl;
+        return;
+    }
+
+    if(!std::isfinite(acceleration.x()) || !std::isfinite(acceleration.y()) || !std::isfinite(acceleration.z()) ||
+       !std::isfinite(angVel.x()) || !std::isfinite(angVel.y()) || !std::isfinite(angVel.z()))
+    {
+        std::cout << "[IMU::Preintegrated] Non-finite acc/gyro. Skipping measurement." << std::endl;
+        return;
+    }
+
     mvMeasurements.push_back(integrable(acceleration,angVel,dt));
 
     // Position is updated firstly, as it depends on previously computed velocity and rotation.

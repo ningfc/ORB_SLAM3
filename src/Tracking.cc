@@ -33,6 +33,7 @@
 
 #include <mutex>
 #include <chrono>
+#include <cmath>
 
 
 using namespace std;
@@ -1675,12 +1676,14 @@ void Tracking::PreintegrateIMU()
     }
 
     const int n = mvImuFromLastFrame.size()-1;
-    if(n==0){
+    if(n<=0){
         cout << "Empty IMU measurements vector!!!\n";
+        mCurrentFrame.setIntegrated();
         return;
     }
 
     IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
+    int integrated_count = 0;
 
     for(int i=0; i<n; i++)
     {
@@ -1689,6 +1692,11 @@ void Tracking::PreintegrateIMU()
         if((i==0) && (i<(n-1)))
         {
             float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+            if(!(std::isfinite(tab) && tab > 1e-9f))
+            {
+                Verbose::PrintMess("Invalid IMU interval at preintegration start (tab<=0 or non-finite). Skipping sample.", Verbose::VERBOSITY_NORMAL);
+                continue;
+            }
             float tini = mvImuFromLastFrame[i].t-mCurrentFrame.mpPrevFrame->mTimeStamp;
             acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                     (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tini/tab))*0.5f;
@@ -1705,6 +1713,11 @@ void Tracking::PreintegrateIMU()
         else if((i>0) && (i==(n-1)))
         {
             float tab = mvImuFromLastFrame[i+1].t-mvImuFromLastFrame[i].t;
+            if(!(std::isfinite(tab) && tab > 1e-9f))
+            {
+                Verbose::PrintMess("Invalid IMU interval at preintegration end (tab<=0 or non-finite). Skipping sample.", Verbose::VERBOSITY_NORMAL);
+                continue;
+            }
             float tend = mvImuFromLastFrame[i+1].t-mCurrentFrame.mTimeStamp;
             acc = (mvImuFromLastFrame[i].a+mvImuFromLastFrame[i+1].a-
                     (mvImuFromLastFrame[i+1].a-mvImuFromLastFrame[i].a)*(tend/tab))*0.5f;
@@ -1719,10 +1732,29 @@ void Tracking::PreintegrateIMU()
             tstep = mCurrentFrame.mTimeStamp-mCurrentFrame.mpPrevFrame->mTimeStamp;
         }
 
+        if(!(std::isfinite(tstep) && tstep > 0.0f))
+        {
+            Verbose::PrintMess("Invalid IMU tstep (<=0 or non-finite). Skipping integration step.", Verbose::VERBOSITY_NORMAL);
+            continue;
+        }
+
+        if(!std::isfinite(acc.x()) || !std::isfinite(acc.y()) || !std::isfinite(acc.z()) ||
+           !std::isfinite(angVel.x()) || !std::isfinite(angVel.y()) || !std::isfinite(angVel.z()))
+        {
+            Verbose::PrintMess("Non-finite IMU acc/gyro encountered during preintegration. Skipping integration step.", Verbose::VERBOSITY_NORMAL);
+            continue;
+        }
+
         if (!mpImuPreintegratedFromLastKF)
             cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
         mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
         pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
+        integrated_count++;
+    }
+
+    if(integrated_count == 0)
+    {
+        Verbose::PrintMess("No valid IMU integration steps for current frame.", Verbose::VERBOSITY_NORMAL);
     }
 
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.10)
 project(Sophus VERSION 1.1.0)
 
 include(CMakePackageConfigHelpers)
@@ -27,7 +27,7 @@ ELSEIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 ELSEIF(CMAKE_CXX_COMPILER_ID MATCHES "^MSVC$")
    ADD_DEFINITIONS("-D _USE_MATH_DEFINES /bigobj /wd4305 /wd4244 /MP")
 ENDIF()
-
+remove_definitions(-Werror)
 # Add local path for finding packages, set the local version first
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules")
 
@@ -97,7 +97,7 @@ target_compile_features (sophus INTERFACE
 add_custom_target(other SOURCES ${SOPHUS_OTHER_FILES})
 
 # Create 'test' make target using ctest
-option(BUILD_TESTS "Build tests." ON)
+option(BUILD_TESTS "Build tests." OFF)
 if(BUILD_TESTS)
     enable_testing()
     add_subdirectory(test)
